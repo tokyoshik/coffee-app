@@ -1,229 +1,100 @@
-import { useState, useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neo Coffee</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        .container { max-width: 400px; margin: 0 auto; padding: 20px; }
+        .card { background: #111; border: 1px solid #222; border-radius: 18px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; }
+        .icon { font-size: 24px; }
+        .info { flex-grow: 1; }
+        .name { font-weight: bold; font-size: 16px; }
+        .price { color: #888; font-size: 14px; }
+        .btn-plus { background: #1ed760; color: #000; border: none; width: 40px; height: 40px; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; }
+        .cart-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 360px; background: #1ed760; color: #000; padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px rgba(30, 215, 96, 0.3); }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: #111; border: 1px solid #1ed760; border-radius: 24px; padding: 30px; width: 100%; max-width: 320px; text-align: center; }
+        .input-table { width: 100%; padding: 15px; background: #222; border: 1px solid #333; border-radius: 12px; color: #fff; margin-bottom: 15px; text-align: center; font-size: 18px; }
+        .btn-order { width: 100%; padding: 15px; background: #1ed760; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-const SUPABASE_URL = 'https://hrwcongjgvafgmwdjurz.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyd2NvbmdqZ3ZhZmdtd2RqdXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkzOTEsImV4cCI6MjA4ODUyNTM5MX0.8ZntmliyiZf14JnqmbxnmUHuqXyEfaxBATDuc69mQF0'
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const SUPABASE_URL = 'https://hrwcongjgvafgmwdjurz.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyd2NvbmdqZ3ZhZmdtd2RqdXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkzOTEsImV4cCI6MjA4ODUyNTM5MX0.8ZntmliyiZf14JnqmbxnmUHuqXyEfaxBATDuc69mQF0';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const ADMIN_PASSWORD = "777"
-const KASPI_NUMBER = "+7 (707) 123-45-67" // Укажи здесь свой номер
+        const menu = [
+            { id: 1, name: 'Эспрессо', price: 800, icon: '☕' },
+            { id: 2, name: 'Капучино', price: 1200, icon: '🥤' },
+            { id: 3, name: 'Латте', price: 1400, icon: '🥛' },
+            { id: 4, name: 'Американо', price: 900, icon: '☕' },
+            { id: 5, name: 'Раф Кофе', price: 1600, icon: '🍦' }
+        ];
 
-const translations: any = {
-  ru: { 
-    cart: "Корзина", table: "№ Стола", ready: "Готово", exit: "Выход", 
-    admin_title: "Доступ", pass: "Пароль", login: "Войти", place_order: "Заказать", 
-    success_title: "Заказ принят! ✅", success_msg: "Ваш столик:", 
-    pay_cash: "1. Оплатите на кассе", pay_kaspi: "2. Перевод на Kaspi:",
-    pay_instruction: "Покажите чек кассиру, назвав номер стола.",
-    error_table: "Укажите стол!" 
-  },
-  kk: { 
-    cart: "Себет", table: "Үстел №", ready: "Дайын", exit: "Шығу", 
-    admin_title: "Кіру", pass: "Құпия сөз", login: "Кіру", place_order: "Тапсырыс беру", 
-    success_title: "Тапсырыс қабылданды! ✅", success_msg: "Сіздің үстеліңіз:", 
-    pay_cash: "1. Кассада төлеңіз", pay_kaspi: "2. Kaspi-ге аударым:",
-    pay_instruction: "Кассирге үстел нөмірін айтып, чекті көрсетіңіз.",
-    error_table: "Үстелді жазыңыз!" 
-  },
-  en: { 
-    cart: "Cart", table: "Table No.", ready: "Ready", exit: "Exit", 
-    admin_title: "Access", pass: "Password", login: "Login", place_order: "Order", 
-    success_title: "Order Received! ✅", success_msg: "Your table:", 
-    pay_cash: "1. Pay at the counter", pay_kaspi: "2. Kaspi Transfer:",
-    pay_instruction: "Show the receipt to the cashier and tell your table number.",
-    error_table: "Table required!" 
-  }
-}
+        function App() {
+            const [cart, setCart] = useState({});
+            const [table, setTable] = useState('');
+            const [showSuccess, setShowSuccess] = useState(false);
 
-const menu = [
-  { id: 1, name: {ru: 'Эспрессо', en: 'Espresso', kk: 'Эспрессо'}, price: 800, icon: '☕' },
-  { id: 2, name: {ru: 'Капучино', en: 'Cappuccino', kk: 'Капучино'}, price: 1200, icon: '🥤' },
-  { id: 3, name: {ru: 'Латте', en: 'Latte', kk: 'Латте'}, price: 1400, icon: '🥛' },
-  { id: 4, name: {ru: 'Американо', en: 'Americano', kk: 'Американо'}, price: 900, icon: '☕' },
-  { id: 5, name: {ru: 'Раф Кофе', en: 'Raf Coffee', kk: 'Раф Кофе'}, price: 1600, icon: '🍦' },
-]
+            const total = Object.keys(cart).reduce((sum, id) => sum + (menu.find(m => m.id === +id).price * cart[id]), 0);
 
-export default function App() {
-  const [view, setView] = useState<'client' | 'barista'>('client')
-  const [lang, setLang] = useState<'ru' | 'en' | 'kk'>('ru')
-  const [cart, setCart] = useState<any>({})
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [tableNumber, setTableNumber] = useState('')
-  const [orders, setOrders] = useState<any[]>([])
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
-  const [lastTable, setLastTable] = useState('')
-  const [showAdminModal, setShowAdminModal] = useState(false)
-  const [passInput, setPassInput] = useState('')
+            const order = async () => {
+                if (!table) return alert("Укажите номер стола!");
+                const { error } = await supabase.from('orders').insert([{ table_number: table, items: cart, total: total }]);
+                if (!error) setShowSuccess(true);
+            };
 
-  const t = translations[lang]
+            return (
+                <div className="container">
+                    <h1 style={{textAlign: 'center'}}>Neo Coffee</h1>
+                    {menu.map(item => (
+                        <div key={item.id} className="card">
+                            <div className="icon">{item.icon}</div>
+                            <div className="info">
+                                <div className="name">{item.name}</div>
+                                <div className="price">{item.price} ₸</div>
+                            </div>
+                            <button className="btn-plus" onClick={() => setCart({...cart, [item.id]: (cart[item.id] || 0) + 1})}>
+                                {cart[item.id] ? `x${cart[item.id]}` : '+'}
+                            </button>
+                        </div>
+                    ))}
 
-  useEffect(() => {
-    if (view === 'barista') {
-      fetchOrders()
-      const sub = supabase.channel('realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders).subscribe()
-      return () => { supabase.removeChannel(sub) }
-    }
-  }, [view])
+                    {total > 0 && !showSuccess && (
+                        <div className="cart-bar" onClick={() => {
+                            const t = prompt("Введите номер стола:");
+                            if(t) { setTable(t); order(); }
+                        }}>
+                            <span>КОРЗИНА</span>
+                            <span>{total} ₸</span>
+                        </div>
+                    )}
 
-  const fetchOrders = async () => {
-    const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
-    if (data) setOrders(data)
-  }
-
-  const updateCart = (id: number, delta: number) => {
-    setCart((prev: any) => {
-      const val = Math.max(0, (prev[id] || 0) + delta)
-      const next = { ...prev, [id]: val }
-      if (val === 0) delete next[id]
-      return next
-    })
-  }
-
-  const total = Object.keys(cart).reduce((s, id) => s + (menu.find(m => m.id === +id)?.price || 0) * cart[+id], 0)
-
-  const handleOrder = async () => {
-    if (!tableNumber) return alert(t.error_table)
-    const { error } = await supabase.from('orders').insert([{ table_number: tableNumber, items: cart, total: total }])
-    if (!error) {
-      setLastTable(tableNumber)
-      setCart({})
-      setIsSidebarOpen(false)
-      setTableNumber('')
-      setShowSuccessModal(true)
-    }
-  }
-
-  return (
-    <div style={{ background: '#000', color: '#fff', minHeight: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', overflowX: 'hidden' }}>
-      <style>{`
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: #000; font-family: -apple-system, sans-serif; }
-        .container { width: 100%; max-width: 420px; padding: 20px; display: flex; flex-direction: column; }
-        .card { background: #111; border: 1px solid #1c1c1c; border-radius: 20px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
-        .btn-green { background: #1ed760; color: #000; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; }
-        .btn-green:active { transform: scale(0.95); }
-        .num { font-family: "SF Mono", monospace; font-variant-numeric: tabular-nums; }
-        .glass { background: rgba(25, 25, 25, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        input { width: 100%; background: #111; border: 1px solid #222; color: #fff; padding: 16px; border-radius: 14px; outline: none; font-size: 16px; text-align: center; }
-      `}</style>
-
-      <div className="container">
-        {/* LANG */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '20px' }}>
-          {['kk','ru','en'].map(l => (
-            <button key={l} onClick={() => setLang(l as any)} style={{ background: lang === l ? '#fff' : '#111', color: lang === l ? '#000' : '#444', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: '900', cursor: 'pointer' }}>{l.toUpperCase()}</button>
-          ))}
-        </div>
-
-        {view === 'client' ? (
-          <>
-            <header onClick={() => { setPassInput(''); setShowAdminModal(true); }} style={{ textAlign: 'center', marginBottom: '30px', cursor: 'pointer' }}>
-              <h1 style={{ fontSize: '32px', fontWeight: '900', margin: 0 }}>Neo Coffee</h1>
-              <div style={{ color: '#1ed760', fontSize: '11px', fontWeight: 'bold' }}>● ONLINE</div>
-            </header>
-
-            {menu.map(item => (
-              <div key={item.id} className="card">
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ fontSize: '24px', background: '#000', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px', border: '1px solid #1c1c1c' }}>{item.icon}</div>
-                  <div>
-                    <div style={{ fontWeight: '700', fontSize: '15px' }}>{(item.name as any)[lang]}</div>
-                    <div className="num" style={{ color: '#1ed760', fontSize: '14px', fontWeight: '800' }}>{item.price} ₸</div>
-                  </div>
+                    {showSuccess && (
+                        <div className="modal">
+                            <div className="modal-content">
+                                <h2 style={{color: '#1ed760'}}>ПРИНЯТО! ✅</h2>
+                                <p>Оплатите на Kaspi:<br/><b>+7 (707) 123-45-67</b></p>
+                                <button className="btn-order" onClick={() => {setCart({}); setShowSuccess(false);}}>OK</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {cart[item.id] && <span className="num" style={{ fontWeight: '900', color: '#1ed760' }}>x{cart[item.id]}</span>}
-                  <button className="btn-green" onClick={() => updateCart(item.id, 1)} style={{ width: '40px', height: '40px', fontSize: '22px' }}>+</button>
-                </div>
-              </div>
-            ))}
+            );
+        }
 
-            {total > 0 && (
-              <div onClick={() => setIsSidebarOpen(true)} className="glass" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', width: '90%', maxWidth: '380px', padding: '16px 20px', borderRadius: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', zInter: 100 }}>
-                <span style={{ fontWeight: '800', fontSize: '12px' }}>{t.cart.toUpperCase()}</span>
-                <span className="num" style={{ fontSize: '18px', fontWeight: '900', color: '#1ed760' }}>{total} ₸</span>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ width: '100%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0 }}>Orders</h2>
-              <button onClick={() => setView('client')} className="btn-green" style={{ padding: '8px 16px', fontSize: '12px' }}>EXIT</button>
-            </div>
-            {orders.map(o => (
-              <div key={o.id} className="card glass" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '900' }}>
-                  <span>{t.table} {o.table_number}</span>
-                  <span className="num" style={{ color: '#1ed760' }}>{o.total} ₸</span>
-                </div>
-                <div style={{ fontSize: '13px', color: '#888' }}>
-                  {Object.entries(o.items).map(([id, count]: any) => (
-                    <div key={id}>• {(menu.find(m => m.id === +id)?.name as any)[lang]} x{count}</div>
-                  ))}
-                </div>
-                <button onClick={() => supabase.from('orders').delete().eq('id', o.id).then(fetchOrders)} className="btn-green" style={{ width: '100%', padding: '12px' }}>{t.ready}</button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* SUCCESS MODAL - THE NEW PART */}
-      {showSuccessModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.95)', padding: '20px' }}>
-          <div className="glass" style={{ padding: '30px', width: '100%', maxWidth: '340px', borderRadius: '25px', textAlign: 'center' }}>
-            <h2 style={{ color: '#1ed760', margin: '0 0 10px 0' }}>{t.success_title}</h2>
-            <p style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 25px 0' }}>{t.success_msg} <span style={{ color: '#1ed760' }}>{lastTable}</span></p>
-            
-            <div style={{ textAlign: 'left', background: '#111', padding: '15px', borderRadius: '15px', marginBottom: '20px', border: '1px solid #222' }}>
-              <div style={{ fontWeight: '700', marginBottom: '8px' }}>{t.pay_cash}</div>
-              <div style={{ fontWeight: '700', marginBottom: '10px' }}>{t.pay_kaspi}</div>
-              <div className="num" style={{ color: '#1ed760', fontSize: '18px', fontWeight: '900', textAlign: 'center', marginBottom: '10px' }}>{KASPI_NUMBER}</div>
-              <p style={{ fontSize: '11px', color: '#666', margin: 0, textAlign: 'center' }}>{t.pay_instruction}</p>
-            </div>
-
-            <button className="btn-green" onClick={() => setShowSuccessModal(false)} style={{ width: '100%', padding: '16px', fontSize: '16px' }}>OK</button>
-          </div>
-        </div>
-      )}
-
-      {/* ADMIN MODAL */}
-      {showAdminModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', padding: '20px' }}>
-          <div className="glass" style={{ padding: '30px', width: '100%', maxWidth: '320px', borderRadius: '25px' }}>
-            <input type="password" placeholder={t.pass} value={passInput} onChange={e => setPassInput(e.target.value)} autoFocus />
-            <button className="btn-green" onClick={() => passInput === ADMIN_PASSWORD ? (setView('barista'), setShowAdminModal(false)) : alert('!')} style={{ width: '100%', padding: '16px', marginTop: '15px' }}>{t.login}</button>
-            <button onClick={() => setShowAdminModal(false)} style={{ width: '100%', background: 'none', border: 'none', color: '#444', marginTop: '10px' }}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {/* CART DRAWER */}
-      {isSidebarOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', justifyContent: 'center' }}>
-          <div onClick={() => setIsSidebarOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)' }} />
-          <div style={{ position: 'relative', width: '100%', maxWidth: '420px', background: '#000', padding: '25px', display: 'flex', flexDirection: 'column' }}>
-            <h2 style={{ color: '#1ed760', margin: '0 0 20px 0' }}>{t.cart}</h2>
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {Object.keys(cart).map(id => (
-                <div key={id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #111' }}>
-                  <span>{(menu.find(m => m.id === +id)?.name as any)[lang]}</span>
-                  <div style={{ display: 'flex', gap: '15px' }}>
-                    <button onClick={() => updateCart(+id, -1)} style={{ background: 'none', border: 'none', color: '#fff' }}>—</button>
-                    <span className="num">{cart[id]}</span>
-                    <button onClick={() => updateCart(+id, 1)} style={{ background: 'none', border: 'none', color: '#1ed760' }}>+</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: '20px' }}>
-              <input type="number" placeholder={t.table} value={tableNumber} onChange={e => setTableNumber(e.target.value)} style={{ marginBottom: '15px' }} />
-              <button className="btn-green" onClick={handleOrder} style={{ width: '100%', padding: '18px', fontSize: '18px' }}>{t.place_order}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
