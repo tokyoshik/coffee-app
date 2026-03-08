@@ -12,48 +12,28 @@
         :root { --main: #1ed760; --bg: #000; --card: #111; --text: #fff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
-        
-        /* Анимации появления */
         .fade-in { animation: fadeIn 0.5s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
         .container { max-width: 450px; margin: 0 auto; padding: 25px; padding-bottom: 140px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        
         .logo { font-weight: 900; font-size: 24px; letter-spacing: -1px; cursor: pointer; color: var(--text); text-transform: uppercase; }
-        
         .lang-btn { background: #111; border: 1px solid #222; color: #555; padding: 8px 14px; border-radius: 12px; font-size: 11px; font-weight: 800; cursor: pointer; }
         .lang-btn.active { background: #fff; color: #000; border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
-
         .menu-item { background: var(--card); border: 1px solid #222; border-radius: 28px; padding: 20px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
         .menu-info { display: flex; align-items: center; gap: 18px; }
         .menu-icon { font-size: 34px; }
         .name { font-weight: 800; font-size: 18px; margin-bottom: 4px; }
         .price { color: #888; font-size: 15px; }
         .add-btn { background: var(--main); color: #000; border: none; width: 46px; height: 46px; border-radius: 16px; font-weight: 900; font-size: 26px; cursor: pointer; box-shadow: 0 4px 15px rgba(30,215,96,0.3); }
-
-        /* Кнопка корзины со свечением */
-        .cart-trigger { 
-            position: fixed; bottom: 30px; left: 5%; width: 90%; 
-            background: var(--main); color: #000; padding: 22px; 
-            border-radius: 24px; display: flex; justify-content: space-between; 
-            font-weight: 900; font-size: 18px; z-index: 100; cursor: pointer; border: none;
-            box-shadow: 0 0 25px rgba(30, 215, 96, 0.6);
-        }
-
+        .cart-trigger { position: fixed; bottom: 30px; left: 5%; width: 90%; background: var(--main); color: #000; padding: 22px; border-radius: 24px; display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; z-index: 100; cursor: pointer; border: none; box-shadow: 0 0 25px rgba(30, 215, 96, 0.6); }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(15px); z-index: 200; display: flex; align-items: flex-end; }
         .drawer { background: #0a0a0a; width: 100%; border-top: 2px solid var(--main); border-radius: 40px 40px 0 0; padding: 40px 30px; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
         .input-dark { width: 100%; background: #000; border: 2px solid #222; padding: 20px; border-radius: 20px; color: #fff; font-size: 22px; font-weight: 900; text-align: center; margin-bottom: 30px; }
-
         .modal-full { position: fixed; inset: 0; background: #000; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 25px; }
         .success-card { background: #111; border: 1px solid var(--main); border-radius: 45px; padding: 50px 30px; width: 100%; text-align: center; }
-
         .code-box { background: #000; padding: 25px; border-radius: 25px; border: 2px dashed #333; margin: 25px 0; }
         .code-val { font-size: 48px; font-weight: 900; letter-spacing: 8px; color: var(--main); }
-
-        /* Админка */
         .order-card { background: #111; border-left: 6px solid var(--main); border-radius: 24px; padding: 30px; margin-bottom: 40px; }
         .btn-ready { width: 100%; background: var(--main); border: none; padding: 20px; border-radius: 18px; font-weight: 900; font-size: 17px; cursor: pointer; }
     </style>
@@ -63,8 +43,6 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-        
-        // Инициализация базы
         const SUPABASE_URL = 'https://hrwcongjgvafgmwdjurz.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyd2NvbmdqZ3ZhZmdtd2RqdXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkzOTEsImV4cCI6MjA4ODUyNTM5MX0.8ZntmliyiZf14JnqmbxnmUHuqXyEfaxBATDuc69mQF0';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -95,28 +73,22 @@
                 en: { cart: "CART", order: "ORDER", table: "Table No.", pay: "Pay at counter or Kaspi:", code: "ORDER CODE:", instr: "Say the code at counter", ready: "READY", total: "TOTAL", exit: "EXIT" }
             }[lang];
 
-            // Загрузка заказов для админки
             useEffect(() => {
                 if (view === 'barista') {
-                    const fetch = async () => {
-                        const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-                        if (data) setOrders(data);
-                    };
-                    fetch();
-                    const sub = supabase.channel('orders').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, fetch).subscribe();
+                    fetchOrders();
+                    const sub = supabase.channel('orders').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, fetchOrders).subscribe();
                     return () => supabase.removeChannel(sub);
                 }
             }, [view]);
 
-            // Секретный вход (5 тапов)
+            const fetchOrders = async () => {
+                const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+                if (data) setOrders(data);
+            };
+
             const handleLogoClick = () => {
                 const next = logoClicks + 1;
-                if (next === 5) {
-                    setIsLoginOpen(true);
-                    setLogoClicks(0);
-                } else {
-                    setLogoClicks(next);
-                }
+                if (next === 5) { setIsLoginOpen(true); setLogoClicks(0); } else { setLogoClicks(next); }
             };
 
             const total = Object.keys(cart).reduce((s, id) => s + (menu.find(m => m.id === +id).price * cart[id]), 0);
@@ -125,7 +97,12 @@
                 if (!table) return alert(t.table + "!");
                 const code = Math.random().toString(36).substring(2, 6).toUpperCase();
                 const { error } = await supabase.from('orders').insert([{ table_number: table, items: cart, total, order_code: code }]);
-                if (!error) { setOrderCode(code); setIsCartOpen(false); }
+                if (!error) { setOrderCode(code); setIsCartOpen(false); } else { alert('Ошибка заказа'); }
+            };
+
+            const handleReady = async (id) => {
+                const { error } = await supabase.from('orders').delete().eq('id', id);
+                if (!error) fetchOrders();
             };
 
             return (
@@ -178,7 +155,7 @@
                                         ))}
                                     </div>
                                     <div style={{fontWeight:'900', fontSize:'18px', marginBottom:'15px'}}>{t.total}: {o.total} ₸</div>
-                                    <button className="btn-ready" onClick={() => supabase.from('orders').delete().eq('id', o.id)}>{t.ready}</button>
+                                    <button className="btn-ready" onClick={() => handleReady(o.id)}>{t.ready}</button>
                                 </div>
                             ))}
                         </div>
