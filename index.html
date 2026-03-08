@@ -10,46 +10,44 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main: #1ed760; --bg: #000; --card: #111; --text: #fff; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; }
         
-        /* Анимация появления */
-        .fade-in { animation: fadeIn 0.5s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
-        .container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
-        
-        /* Меню */
+        .container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 120px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .lang-btn { background: #111; border: 1px solid #222; color: #444; padding: 5px 10px; border-radius: 8px; font-size: 10px; cursor: pointer; margin-right: 5px; }
+        
+        .logo { font-weight: 900; font-size: 22px; letter-spacing: -1px; cursor: pointer; color: var(--text); text-transform: uppercase; }
+        
+        .lang-btn { background: #111; border: 1px solid #222; color: #555; padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; cursor: pointer; margin-right: 5px; }
         .lang-btn.active { background: #fff; color: #000; border-color: #fff; }
 
-        .menu-item { background: var(--card); border: 1px solid #222; border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+        .menu-item { background: var(--card); border: 1px solid #222; border-radius: 24px; padding: 18px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
         .menu-info { display: flex; align-items: center; gap: 15px; }
-        .menu-icon { font-size: 28px; }
-        .menu-text .name { font-weight: 800; font-size: 16px; }
-        .menu-text .price { color: #666; font-size: 14px; }
-        .add-btn { background: var(--main); color: #000; border: none; width: 40px; height: 40px; border-radius: 12px; font-weight: bold; font-size: 20px; cursor: pointer; }
+        .menu-icon { font-size: 32px; }
+        .name { font-weight: 800; font-size: 17px; margin-bottom: 2px; }
+        .price { color: #777; font-size: 14px; }
+        .add-btn { background: var(--main); color: #000; border: none; width: 44px; height: 44px; border-radius: 14px; font-weight: 900; font-size: 24px; cursor: pointer; }
 
-        /* Кнопка корзины */
-        .cart-trigger { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; background: var(--main); color: #000; padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; font-weight: 900; box-shadow: 0 10px 40px rgba(30,215,96,0.3); z-index: 99; cursor: pointer; }
+        .cart-trigger { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; background: var(--main); color: #000; padding: 20px; border-radius: 22px; display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; box-shadow: 0 15px 40px rgba(30,215,96,0.4); z-index: 100; cursor: pointer; border: none; }
 
-        /* Окна (Modals) */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: flex-end; }
-        .drawer { background: #111; width: 100%; border-top: 1px solid #222; border-radius: 30px 30px 0 0; padding: 30px; animation: slideUp 0.3s ease; }
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); z-index: 200; display: flex; align-items: flex-end; }
+        .drawer { background: #0a0a0a; width: 100%; border-top: 1px solid #222; border-radius: 35px 35px 0 0; padding: 35px; animation: slideUp 0.3s ease; max-height: 85vh; overflow-y: auto; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        .modal-center { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .success-card { background: #111; border: 1px solid var(--main); border-radius: 35px; padding: 30px; width: 100%; max-width: 350px; text-align: center; }
-
-        /* Поля ввода */
-        .input-dark { width: 100%; background: #000; border: 1px solid #333; padding: 15px; border-radius: 15px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 20px; outline: none; }
+        .input-dark { width: 100%; background: #151515; border: 2px solid #222; padding: 18px; border-radius: 18px; color: #fff; font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 25px; }
         .input-dark:focus { border-color: var(--main); }
 
-        /* Админка */
-        .order-card { background: #111; border-left: 4px solid var(--main); border-radius: 15px; padding: 20px; margin-bottom: 15px; }
-        .order-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .btn-ready { width: 100%; background: var(--main); border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 14px; }
+        .modal-full { position: fixed; inset: 0; background: #000; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 25px; }
+        .success-card { background: #111; border: 1px solid var(--main); border-radius: 40px; padding: 40px 30px; width: 100%; text-align: center; box-shadow: 0 0 50px rgba(30,215,96,0.1); }
+
+        .code-box { background: #000; padding: 20px; border-radius: 20px; border: 2px dashed #333; margin: 20px 0; }
+        .code-val { font-size: 42px; font-weight: 900; letter-spacing: 6px; color: var(--main); }
+
+        .order-card { background: #111; border-left: 5px solid var(--main); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
+        .btn-ready { width: 100%; background: var(--main); border: none; padding: 18px; border-radius: 16px; font-weight: 900; font-size: 16px; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -61,15 +59,12 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyd2NvbmdqZ3ZhZmdtd2RqdXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkzOTEsImV4cCI6MjA4ODUyNTM5MX0.8ZntmliyiZf14JnqmbxnmUHuqXyEfaxBATDuc69mQF0';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const ADMIN_PASSWORD = "777";
-        const KASPI_NUMBER = "+7 (707) 123-45-67";
-
         const menu = [
-            { id: 1, name: {ru: 'Эспрессо', kk: 'Эспрессо', en: 'Espresso'}, price: 800, icon: '☕' },
-            { id: 2, name: {ru: 'Капучино', kk: 'Капучино', en: 'Cappuccino'}, price: 1200, icon: '🥤' },
-            { id: 3, name: {ru: 'Латте', kk: 'Латте', en: 'Latte'}, price: 1400, icon: '🥛' },
-            { id: 4, name: {ru: 'Американо', kk: 'Американо', en: 'Americano'}, price: 900, icon: '☕' },
-            { id: 5, name: {ru: 'Раф Клубничный', kk: 'Кұлпынай Раф', en: 'Strawberry Raf'}, price: 1600, icon: '🍓' }
+            { id: 1, name: {ru:'Эспрессо', kk:'Эспрессо', en:'Espresso'}, price: 800, icon: '☕' },
+            { id: 2, name: {ru:'Капучино', kk:'Капучино', en:'Cappuccino'}, price: 1200, icon: '🥤' },
+            { id: 3, name: {ru:'Латте', kk:'Латте', en:'Latte'}, price: 1400, icon: '🥛' },
+            { id: 4, name: {ru:'Американо', kk:'Американо', en:'Americano'}, price: 900, icon: '☕' },
+            { id: 5, name: {ru:'Раф Клубничный', kk:'Кұлпынай Раф', en:'Strawberry Raf'}, price: 1600, icon: '🍓' }
         ];
 
         function App() {
@@ -78,50 +73,51 @@
             const [cart, setCart] = useState({});
             const [table, setTable] = useState('');
             const [isCartOpen, setIsCartOpen] = useState(false);
-            const [orderResult, setOrderResult] = useState(null);
+            const [orderCode, setOrderCode] = useState(null);
             const [orders, setOrders] = useState([]);
-            const [adminPass, setAdminPass] = useState('');
+            const [isLoginOpen, setIsLoginOpen] = useState(false);
+            const [pass, setPass] = useState('');
 
             const t = {
-                ru: { cart: "КОРЗИНА", order: "ЗАКАЗАТЬ", table: "№ Стола", pay_info: "Оплата на кассе или Kaspi:", code: "ВАШ КОД:", instr: "Покажите этот код кассиру", ready: "ГОТОВО", total: "Сумма" },
-                kk: { cart: "СЕБЕТ", order: "ТАПСЫРЫС", table: "Үстел №", pay_info: "Кассада немесе Kaspi-мен төлеу:", code: "СІЗДІҢ КОДЫҢЫЗ:", instr: "Бұл кодты кассирге көрсетіңіз", ready: "ДАЙЫН", total: "Жиыны" },
-                en: { cart: "CART", order: "ORDER", table: "Table No.", pay_info: "Pay at counter or Kaspi:", code: "YOUR CODE:", instr: "Show this code to cashier", ready: "READY", total: "Total" }
+                ru: { cart: "КОРЗИНА", order: "ЗАКАЗАТЬ", table: "№ Стола", pay: "Оплата на кассе или Kaspi:", code: "КОД ЗАКАЗА:", instr: "Назовите этот код на кассе", ready: "ГОТОВО", total: "ИТОГО", exit: "ВЫХОД" },
+                kk: { cart: "СЕБЕТ", order: "ТАПСЫРЫС", table: "Үстел №", pay: "Кассада немесе Kaspi-мен:", code: "ТАПСЫРЫС КОДЫ:", instr: "Бұл кодты кассада айтыңыз", ready: "ДАЙЫН", total: "ЖИЫНЫ", exit: "ШЫҒУ" },
+                en: { cart: "CART", order: "ORDER", table: "Table No.", pay: "Pay at counter or Kaspi:", code: "ORDER CODE:", instr: "Tell this code at counter", ready: "READY", total: "TOTAL", exit: "EXIT" }
             }[lang];
 
             useEffect(() => {
                 if (view === 'barista') {
-                    fetchOrders();
-                    const channel = supabase.channel('realtime').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, fetchOrders).subscribe();
-                    return () => supabase.removeChannel(channel);
+                    const fetch = async () => {
+                        const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+                        if (data) setOrders(data);
+                    };
+                    fetch();
+                    const sub = supabase.channel('orders').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, fetch).subscribe();
+                    return () => supabase.removeChannel(sub);
                 }
             }, [view]);
 
-            const fetchOrders = async () => {
-                const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-                if (data) setOrders(data);
-            };
-
             const total = Object.keys(cart).reduce((s, id) => s + (menu.find(m => m.id === +id).price * cart[id]), 0);
 
-            const sendOrder = async () => {
-                if (!table) return alert(t.table);
+            const handleOrder = async () => {
+                if (!table) return alert(t.table + "!");
                 const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-                const { error } = await supabase.from('orders').insert([{ table_number: table, items: cart, total: total, order_code: code }]);
-                if (!error) {
-                    setOrderResult(code);
-                    setIsCartOpen(false);
-                }
+                const { error } = await supabase.from('orders').insert([{ table_number: table, items: cart, total, order_code: code }]);
+                if (!error) { setOrderCode(code); setIsCartOpen(false); }
+            };
+
+            const finishOrder = async (id) => {
+                await supabase.from('orders').delete().eq('id', id);
             };
 
             return (
                 <div className="container fade-in">
                     <div className="header">
+                        <div className="logo" onClick={() => setIsLoginOpen(true)}>NEO COFFEE</div>
                         <div>
                             {['kk','ru','en'].map(l => (
                                 <button key={l} className={`lang-btn ${lang === l ? 'active' : ''}`} onClick={() => setLang(l)}>{l.toUpperCase()}</button>
                             ))}
                         </div>
-                        <h2 onClick={() => {const p = prompt("Password?"); if(p === ADMIN_PASSWORD) setView('barista')}} style={{margin:0, letterSpacing:'-1px'}}>NEO COFFEE</h2>
                     </div>
 
                     {view === 'client' ? (
@@ -130,41 +126,40 @@
                                 <div key={item.id} className="menu-item fade-in">
                                     <div className="menu-info">
                                         <div className="menu-icon">{item.icon}</div>
-                                        <div className="menu-text">
+                                        <div>
                                             <div className="name">{item.name[lang]}</div>
                                             <div className="price">{item.price} ₸</div>
                                         </div>
                                     </div>
-                                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                                        {cart[item.id] > 0 && <span style={{fontWeight:'bold', color: 'var(--main)'}}>x{cart[item.id]}</span>}
+                                    <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                                        {cart[item.id] > 0 && <b style={{color: 'var(--main)'}}>x{cart[item.id]}</b>}
                                         <button className="add-btn" onClick={() => setCart({...cart, [item.id]: (cart[item.id] || 0) + 1})}>+</button>
                                     </div>
                                 </div>
                             ))}
-
                             {total > 0 && (
-                                <div className="cart-trigger" onClick={() => setIsCartOpen(true)}>
+                                <button className="cart-trigger fade-in" onClick={() => setIsCartOpen(true)}>
                                     <span>{t.cart}</span>
                                     <span>{total} ₸</span>
-                                </div>
+                                </button>
                             )}
                         </>
                     ) : (
                         <div className="fade-in">
-                            <button onClick={() => setView('client')} className="lang-btn active" style={{marginBottom:'20px'}}>ВЫХОД</button>
+                            <button className="lang-btn active" onClick={() => setView('client')} style={{marginBottom:'20px'}}>{t.exit}</button>
                             {orders.map(o => (
                                 <div key={o.id} className="order-card">
-                                    <div className="order-header">
-                                        <b>Стол: {o.table_number}</b>
-                                        <b style={{color: 'var(--main)'}}>КОД: {o.order_code}</b>
+                                    <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px'}}>
+                                        <b style={{fontSize:'20px'}}>{t.table} {o.table_number}</b>
+                                        <b style={{color:'var(--main)'}}>{o.order_code}</b>
                                     </div>
-                                    <div style={{fontSize:'14px', marginBottom:'10px', color:'#999'}}>
+                                    <div style={{color:'#888', fontSize:'14px', marginBottom:'10px'}}>
                                         {Object.entries(o.items).map(([id, count]) => (
                                             <div key={id}>{menu.find(m => m.id === +id).name[lang]} x{count}</div>
                                         ))}
                                     </div>
-                                    <div style={{fontWeight:'bold', marginBottom:'15px'}}>{t.total}: {o.total} ₸</div>
-                                    <button className="btn-ready" onClick={() => supabase.from('orders').delete().eq('id', o.id)}>ГОТОВО</button>
+                                    <div style={{fontWeight:'900'}}>{t.total}: {o.total} ₸</div>
+                                    <button className="btn-ready" onClick={() => finishOrder(o.id)}>{t.ready}</button>
                                 </div>
                             ))}
                         </div>
@@ -172,38 +167,46 @@
 
                     {isCartOpen && (
                         <div className="overlay" onClick={() => setIsCartOpen(false)}>
-                            <div className="drawer" onClick={e => e.stopPropagation()}>
-                                <h2 style={{marginTop:0}}>{t.cart}</h2>
+                            <div className="drawer fade-in" onClick={e => e.stopPropagation()}>
+                                <h2 style={{marginTop:0, fontSize:'28px'}}>{t.cart}</h2>
                                 <input type="number" placeholder={t.table} className="input-dark" value={table} onChange={e => setTable(e.target.value)} />
-                                <div style={{marginBottom:'20px'}}>
+                                <div style={{marginBottom:'30px'}}>
                                     {Object.entries(cart).map(([id, count]) => (
-                                        <div key={id} style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}>
+                                        <div key={id} style={{display:'flex', justifyContent:'space-between', marginBottom:'12px', fontSize:'18px'}}>
                                             <span>{menu.find(m => m.id === +id).name[lang]}</span>
                                             <b>x{count}</b>
                                         </div>
                                     ))}
                                 </div>
-                                <button className="cart-trigger" style={{position:'static', width:'100%', transform:'none'}} onClick={sendOrder}>
-                                    {t.order} — {total} ₸
-                                </button>
+                                <button className="btn-ready" style={{fontSize:'20px', padding:'22px'}} onClick={handleOrder}>{t.order} — {total} ₸</button>
                             </div>
                         </div>
                     )}
 
-                    {orderResult && (
-                        <div className="modal-center">
-                            <div className="success-card fade-in">
-                                <div style={{fontSize:'50px', marginBottom:'10px'}}>✅</div>
-                                <h2 style={{margin:'0 0 10px 0'}}>ПРИНЯТО!</h2>
-                                <p style={{color:'#666', fontSize:'14px'}}>{t.pay_info}</p>
-                                <h3 style={{color:'var(--main)', margin:'5px 0 20px 0'}}>{KASPI_NUMBER}</h3>
-                                
-                                <div style={{background:'#000', padding:'15px', borderRadius:'15px', border:'1px dashed #333'}}>
-                                    <div style={{fontSize:'10px', color:'#666'}}>{t.code}</div>
-                                    <div style={{fontSize:'32px', fontWeight:'900', letterSpacing:'5px'}}>{orderResult}</div>
+                    {orderCode && (
+                        <div className="modal-full fade-in">
+                            <div className="success-card">
+                                <div style={{fontSize:'60px', marginBottom:'15px'}}>✅</div>
+                                <h1 style={{margin:'0 0 10px 0', fontSize:'28px'}}>{lang === 'ru' ? 'ПРИНЯТО!' : lang === 'kk' ? 'ҚАБЫЛДАНДЫ!' : 'RECEIVED!'}</h1>
+                                <p style={{color:'#777', fontSize:'15px'}}>{t.pay}</p>
+                                <h2 style={{color:'var(--main)', margin:'10px 0 25px 0'}}>+7 (707) 123-45-67</h2>
+                                <div className="code-box">
+                                    <div style={{fontSize:'11px', color:'#555', marginBottom:'5px'}}>{t.code}</div>
+                                    <div className="code-val">{orderCode}</div>
                                 </div>
-                                <p style={{fontSize:'12px', color:'#555', marginTop:'15px'}}>{t.instr}</p>
-                                <button className="btn-ready" style={{marginTop:'25px'}} onClick={() => {setCart({}); setOrderResult(null); setTable('');}}>OK</button>
+                                <p style={{fontSize:'13px', color:'#555', marginTop:'10px'}}>{t.instr}</p>
+                                <button className="btn-ready" style={{marginTop:'30px'}} onClick={() => {setCart({}); setOrderCode(null); setTable('');}}>OK</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isLoginOpen && (
+                        <div className="overlay" style={{alignItems:'center', justifyContent:'center', padding:'20px'}}>
+                            <div className="success-card fade-in" style={{maxWidth:'320px'}}>
+                                <h2 style={{marginTop:0}}>ADMIN</h2>
+                                <input type="password" placeholder="Password" className="input-dark" value={pass} onChange={e => setPass(e.target.value)} />
+                                <button className="btn-ready" onClick={() => pass === '777' ? (setView('barista'), setIsLoginOpen(false), setPass('')) : alert('!')}>LOGIN</button>
+                                <button onClick={() => setIsLoginOpen(false)} style={{background:'none', border:'none', color:'#444', marginTop:'15px'}}>Cancel</button>
                             </div>
                         </div>
                     )}
