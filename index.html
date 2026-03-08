@@ -3,22 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neo Coffee App</title>
+    <title>Neo Coffee</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        body { background-color: #050505; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .neon-border { border: 1px solid #1ed760; box-shadow: 0 0 15px rgba(30, 215, 96, 0.2); }
-        .btn-green { background: #1ed760; color: black; font-weight: 800; transition: all 0.2s; }
-        .btn-green:active { transform: scale(0.95); filter: brightness(0.8); }
-        input:focus { outline: none; border-color: #1ed760; }
-        .order-card { border-left: 4px solid #1ed760; }
-        ::-webkit-scrollbar { display: none; }
+        :root { --main: #1ed760; --bg: #000; --card: #111; --text: #fff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; margin: 0; padding: 0; overflow-x: hidden; }
+        
+        /* Анимация появления */
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .container { max-width: 450px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        
+        /* Меню */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .lang-btn { background: #111; border: 1px solid #222; color: #444; padding: 5px 10px; border-radius: 8px; font-size: 10px; cursor: pointer; margin-right: 5px; }
+        .lang-btn.active { background: #fff; color: #000; border-color: #fff; }
+
+        .menu-item { background: var(--card); border: 1px solid #222; border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; transition: 0.3s; }
+        .menu-info { display: flex; align-items: center; gap: 15px; }
+        .menu-icon { font-size: 28px; }
+        .menu-text .name { font-weight: 800; font-size: 16px; }
+        .menu-text .price { color: #666; font-size: 14px; }
+        .add-btn { background: var(--main); color: #000; border: none; width: 40px; height: 40px; border-radius: 12px; font-weight: bold; font-size: 20px; cursor: pointer; }
+
+        /* Кнопка корзины */
+        .cart-trigger { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; background: var(--main); color: #000; padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; font-weight: 900; box-shadow: 0 10px 40px rgba(30,215,96,0.3); z-index: 99; cursor: pointer; }
+
+        /* Окна (Modals) */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: flex-end; }
+        .drawer { background: #111; width: 100%; border-top: 1px solid #222; border-radius: 30px 30px 0 0; padding: 30px; animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .modal-center { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .success-card { background: #111; border: 1px solid var(--main); border-radius: 35px; padding: 30px; width: 100%; max-width: 350px; text-align: center; }
+
+        /* Поля ввода */
+        .input-dark { width: 100%; background: #000; border: 1px solid #333; padding: 15px; border-radius: 15px; color: #fff; font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 20px; outline: none; }
+        .input-dark:focus { border-color: var(--main); }
+
+        /* Админка */
+        .order-card { background: #111; border-left: 4px solid var(--main); border-radius: 15px; padding: 20px; margin-bottom: 15px; }
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .btn-ready { width: 100%; background: var(--main); border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -26,234 +57,153 @@
 
     <script type="text/babel">
         const { useState, useEffect } = React;
-
         const SUPABASE_URL = 'https://hrwcongjgvafgmwdjurz.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhyd2NvbmdqZ3ZhZmdtd2RqdXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkzOTEsImV4cCI6MjA4ODUyNTM5MX0.8ZntmliyiZf14JnqmbxnmUHuqXyEfaxBATDuc69mQF0';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const ADMIN_PASSWORD = "777";
-        const KASPI_NUMBER = "+7 (707) 123-45-67"; // Поменяй на свой номер здесь
-
-        const translations = {
-            ru: {
-                cart: "Корзина", table: "№ Стола", ready: "Готово", exit: "Выход",
-                admin_title: "Доступ", pass: "Пароль", login: "Войти", place_order: "Заказать",
-                success_title: "Заказ принят! ✅", success_msg: "Ваш столик:", 
-                pay_cash: "1. Оплатите на кассе", pay_kaspi: "2. Перевод на Kaspi:",
-                pay_instruction: "Покажите чек кассиру и назовите свой код.",
-                error_table: "Укажите стол!", order_code: "КОД ЗАКАЗА:", total: "ИТОГО"
-            },
-            kk: {
-                cart: "Себет", table: "Үстел №", ready: "Дайын", exit: "Шығу",
-                admin_title: "Кіру", pass: "Құпия сөз", login: "Кіру", place_order: "Тапсырыс беру",
-                success_title: "Тапсырыс қабылданды! ✅", success_msg: "Сіздің үстеліңіз:",
-                pay_cash: "1. Кассада төлеңіз", pay_kaspi: "2. Kaspi-ге аударым:",
-                pay_instruction: "Кассирге чекті көрсетіп, кодыңызды айтыңыз.",
-                error_table: "Үстелді жазыңыз!", order_code: "ТАПСЫРЫС КОДЫ:", total: "ЖИЫНЫ"
-            },
-            en: {
-                cart: "Cart", table: "Table No.", ready: "Ready", exit: "Exit",
-                admin_title: "Access", pass: "Password", login: "Login", place_order: "Order",
-                success_title: "Order Received! ✅", success_msg: "Your table:",
-                pay_cash: "1. Pay at the counter", pay_kaspi: "2. Kaspi Transfer:",
-                pay_instruction: "Show the receipt to the cashier and say your code.",
-                error_table: "Table required!", order_code: "ORDER CODE:", total: "TOTAL"
-            }
-        };
+        const KASPI_NUMBER = "+7 (707) 123-45-67";
 
         const menu = [
-            { id: 1, name: {ru: 'Эспрессо', en: 'Espresso', kk: 'Эспрессо'}, price: 800, icon: '☕' },
-            { id: 2, name: {ru: 'Капучино', en: 'Cappuccino', kk: 'Капучино'}, price: 1200, icon: '🥤' },
-            { id: 3, name: {ru: 'Латте', en: 'Latte', kk: 'Латте'}, price: 1400, icon: '🥛' },
-            { id: 4, name: {ru: 'Американо', en: 'Americano', kk: 'Американо'}, price: 900, icon: '☕' },
-            { id: 5, name: {ru: 'Раф Кофе', en: 'Raf Coffee', kk: 'Раф Кофе'}, price: 1600, icon: '🍦' },
+            { id: 1, name: {ru: 'Эспрессо', kk: 'Эспрессо', en: 'Espresso'}, price: 800, icon: '☕' },
+            { id: 2, name: {ru: 'Капучино', kk: 'Капучино', en: 'Cappuccino'}, price: 1200, icon: '🥤' },
+            { id: 3, name: {ru: 'Латте', kk: 'Латте', en: 'Latte'}, price: 1400, icon: '🥛' },
+            { id: 4, name: {ru: 'Американо', kk: 'Американо', en: 'Americano'}, price: 900, icon: '☕' },
+            { id: 5, name: {ru: 'Раф Клубничный', kk: 'Кұлпынай Раф', en: 'Strawberry Raf'}, price: 1600, icon: '🍓' }
         ];
 
         function App() {
             const [view, setView] = useState('client');
             const [lang, setLang] = useState('ru');
             const [cart, setCart] = useState({});
-            const [tableNumber, setTableNumber] = useState('');
+            const [table, setTable] = useState('');
             const [isCartOpen, setIsCartOpen] = useState(false);
+            const [orderResult, setOrderResult] = useState(null);
             const [orders, setOrders] = useState([]);
-            const [showSuccess, setShowSuccess] = useState(false);
-            const [currentOrderCode, setCurrentOrderCode] = useState('');
             const [adminPass, setAdminPass] = useState('');
-            const [isAdminOpen, setIsAdminOpen] = useState(false);
 
-            const t = translations[lang];
+            const t = {
+                ru: { cart: "КОРЗИНА", order: "ЗАКАЗАТЬ", table: "№ Стола", pay_info: "Оплата на кассе или Kaspi:", code: "ВАШ КОД:", instr: "Покажите этот код кассиру", ready: "ГОТОВО", total: "Сумма" },
+                kk: { cart: "СЕБЕТ", order: "ТАПСЫРЫС", table: "Үстел №", pay_info: "Кассада немесе Kaspi-мен төлеу:", code: "СІЗДІҢ КОДЫҢЫЗ:", instr: "Бұл кодты кассирге көрсетіңіз", ready: "ДАЙЫН", total: "Жиыны" },
+                en: { cart: "CART", order: "ORDER", table: "Table No.", pay_info: "Pay at counter or Kaspi:", code: "YOUR CODE:", instr: "Show this code to cashier", ready: "READY", total: "Total" }
+            }[lang];
 
             useEffect(() => {
                 if (view === 'barista') {
                     fetchOrders();
-                    const sub = supabaseClient.channel('orders_channel').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders).subscribe();
-                    return () => { supabaseClient.removeChannel(sub) };
+                    const channel = supabase.channel('realtime').on('postgres_changes', {event:'*', schema:'public', table:'orders'}, fetchOrders).subscribe();
+                    return () => supabase.removeChannel(channel);
                 }
             }, [view]);
 
             const fetchOrders = async () => {
-                const { data } = await supabaseClient.from('orders').select('*').order('created_at', { ascending: false });
+                const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
                 if (data) setOrders(data);
             };
 
-            const updateCart = (id, delta) => {
-                setCart(prev => {
-                    const next = { ...prev, [id]: (prev[id] || 0) + delta };
-                    if (next[id] <= 0) delete next[id];
-                    return { ...next };
-                });
-            };
+            const total = Object.keys(cart).reduce((s, id) => s + (menu.find(m => m.id === +id).price * cart[id]), 0);
 
-            const total = Object.keys(cart).reduce((sum, id) => sum + (menu.find(m => m.id === +id).price * cart[id]), 0);
-
-            const handleOrder = async () => {
-                if (!tableNumber) return alert(t.error_table);
-                const orderCode = Math.random().toString(36).substring(2, 6).toUpperCase();
-                const { error } = await supabaseClient.from('orders').insert([{ 
-                    table_number: tableNumber, 
-                    items: cart, 
-                    total: total,
-                    order_code: orderCode 
-                }]);
+            const sendOrder = async () => {
+                if (!table) return alert(t.table);
+                const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+                const { error } = await supabase.from('orders').insert([{ table_number: table, items: cart, total: total, order_code: code }]);
                 if (!error) {
-                    setCurrentOrderCode(orderCode);
-                    setShowSuccess(true);
+                    setOrderResult(code);
                     setIsCartOpen(false);
                 }
             };
 
             return (
-                <div className="min-h-screen p-5 max-w-md mx-auto relative">
-                    {/* Header */}
-                    <div className="flex justify-between items-center mb-8 mt-2">
-                        <div className="flex gap-2">
+                <div className="container fade-in">
+                    <div className="header">
+                        <div>
                             {['kk','ru','en'].map(l => (
-                                <button key={l} onClick={() => setLang(l)} className={`text-[10px] px-2 py-1 rounded-md font-bold ${lang === l ? 'bg-white text-black' : 'text-gray-600 border border-gray-800'}`}>{l.toUpperCase()}</button>
+                                <button key={l} className={`lang-btn ${lang === l ? 'active' : ''}`} onClick={() => setLang(l)}>{l.toUpperCase()}</button>
                             ))}
                         </div>
-                        <h1 onClick={() => setIsAdminOpen(true)} className="font-black text-xl tracking-tighter cursor-pointer">NEO COFFEE</h1>
+                        <h2 onClick={() => {const p = prompt("Password?"); if(p === ADMIN_PASSWORD) setView('barista')}} style={{margin:0, letterSpacing:'-1px'}}>NEO COFFEE</h2>
                     </div>
 
                     {view === 'client' ? (
-                        <div className="animate__animated animate__fadeIn">
-                            <div className="text-center mb-8">
-                                <span className="text-[10px] text-green-500 font-bold tracking-widest uppercase">● Online Ordering Available</span>
-                            </div>
-
+                        <>
                             {menu.map(item => (
-                                <div key={item.id} className="glass rounded-3xl p-4 mb-4 flex items-center justify-between animate__animated animate__fadeInUp">
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-3xl">{item.icon}</div>
-                                        <div>
-                                            <div className="font-bold">{item.name[lang]}</div>
-                                            <div className="text-gray-400 text-sm">{item.price} ₸</div>
+                                <div key={item.id} className="menu-item fade-in">
+                                    <div className="menu-info">
+                                        <div className="menu-icon">{item.icon}</div>
+                                        <div className="menu-text">
+                                            <div className="name">{item.name[lang]}</div>
+                                            <div className="price">{item.price} ₸</div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        {cart[item.id] > 0 && <span className="text-green-500 font-bold">x{cart[item.id]}</span>}
-                                        <button onClick={() => updateCart(item.id, 1)} className="btn-green w-10 h-10 rounded-xl text-xl">+</button>
+                                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                                        {cart[item.id] > 0 && <span style={{fontWeight:'bold', color: 'var(--main)'}}>x{cart[item.id]}</span>}
+                                        <button className="add-btn" onClick={() => setCart({...cart, [item.id]: (cart[item.id] || 0) + 1})}>+</button>
                                     </div>
                                 </div>
                             ))}
 
                             {total > 0 && (
-                                <div onClick={() => setIsCartOpen(true)} className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-sm glass neon-border p-5 rounded-3xl flex justify-between items-center cursor-pointer animate__animated animate__slideInUp">
-                                    <span className="font-black text-sm">{t.cart.toUpperCase()}</span>
-                                    <span className="font-black text-lg">{total} ₸</span>
+                                <div className="cart-trigger" onClick={() => setIsCartOpen(true)}>
+                                    <span>{t.cart}</span>
+                                    <span>{total} ₸</span>
                                 </div>
                             )}
-                        </div>
+                        </>
                     ) : (
-                        <div className="animate__animated animate__fadeIn">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-black italic">ORDERS</h2>
-                                <button onClick={() => setView('client')} className="btn-green px-4 py-1 rounded-lg text-xs">EXIT</button>
-                            </div>
+                        <div className="fade-in">
+                            <button onClick={() => setView('client')} className="lang-btn active" style={{marginBottom:'20px'}}>ВЫХОД</button>
                             {orders.map(o => (
-                                <div key={o.id} className="glass p-5 rounded-2xl mb-4 order-card animate__animated animate__fadeInLeft">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div>
-                                            <div className="text-xs text-gray-500">{t.table}</div>
-                                            <div className="text-xl font-black">{o.table_number}</div>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-xs text-green-500 font-bold">{t.order_code}</div>
-                                            <div className="text-xl font-mono font-black">{o.order_code}</div>
-                                        </div>
+                                <div key={o.id} className="order-card">
+                                    <div className="order-header">
+                                        <b>Стол: {o.table_number}</b>
+                                        <b style={{color: 'var(--main)'}}>КОД: {o.order_code}</b>
                                     </div>
-                                    <div className="space-y-1 mb-4 border-t border-gray-800 pt-3">
+                                    <div style={{fontSize:'14px', marginBottom:'10px', color:'#999'}}>
                                         {Object.entries(o.items).map(([id, count]) => (
-                                            <div key={id} className="text-sm flex justify-between">
-                                                <span>{menu.find(m => m.id === +id).name[lang]}</span>
-                                                <span className="font-bold">x{count}</span>
-                                            </div>
+                                            <div key={id}>{menu.find(m => m.id === +id).name[lang]} x{count}</div>
                                         ))}
                                     </div>
-                                    <button onClick={() => supabaseClient.from('orders').delete().eq('id', o.id)} className="w-full btn-green py-3 rounded-xl">{t.ready.toUpperCase()}</button>
+                                    <div style={{fontWeight:'bold', marginBottom:'15px'}}>{t.total}: {o.total} ₸</div>
+                                    <button className="btn-ready" onClick={() => supabase.from('orders').delete().eq('id', o.id)}>ГОТОВО</button>
                                 </div>
                             ))}
                         </div>
                     )}
 
-                    {/* MODAL: CART */}
                     {isCartOpen && (
-                        <div className="fixed inset-0 z-50 flex items-end">
-                            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
-                            <div className="relative w-full glass rounded-t-[40px] p-8 animate__animated animate__slideInUp">
-                                <h2 className="text-2xl font-black mb-6">{t.cart}</h2>
-                                <input type="number" placeholder={t.table} value={tableNumber} onChange={e => setTableNumber(e.target.value)} className="input-table w-full mb-6" />
-                                <div className="space-y-4 mb-8">
+                        <div className="overlay" onClick={() => setIsCartOpen(false)}>
+                            <div className="drawer" onClick={e => e.stopPropagation()}>
+                                <h2 style={{marginTop:0}}>{t.cart}</h2>
+                                <input type="number" placeholder={t.table} className="input-dark" value={table} onChange={e => setTable(e.target.value)} />
+                                <div style={{marginBottom:'20px'}}>
                                     {Object.entries(cart).map(([id, count]) => (
-                                        <div key={id} className="flex justify-between items-center">
+                                        <div key={id} style={{display:'flex', justifyContent:'space-between', marginBottom:'10px'}}>
                                             <span>{menu.find(m => m.id === +id).name[lang]}</span>
-                                            <div className="flex gap-4 items-center">
-                                                <button onClick={() => updateCart(+id, -1)} className="text-gray-500 text-xl">—</button>
-                                                <span className="font-bold">{count}</span>
-                                                <button onClick={() => updateCart(+id, 1)} className="text-green-500 text-xl">+</button>
-                                            </div>
+                                            <b>x{count}</b>
                                         </div>
                                     ))}
                                 </div>
-                                <button onClick={handleOrder} className="w-full btn-green py-5 rounded-2xl text-lg uppercase tracking-tighter">{t.place_order} — {total} ₸</button>
+                                <button className="cart-trigger" style={{position:'static', width:'100%', transform:'none'}} onClick={sendOrder}>
+                                    {t.order} — {total} ₸
+                                </button>
                             </div>
                         </div>
                     )}
 
-                    {/* MODAL: SUCCESS */}
-                    {showSuccess && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95">
-                            <div className="glass neon-border w-full max-w-xs rounded-[32px] p-8 text-center animate__animated animate__zoomIn">
-                                <div className="text-5xl mb-4">✅</div>
-                                <h2 className="text-xl font-black mb-2">{t.success_title}</h2>
-                                <p className="text-gray-400 text-sm mb-6">{t.success_msg} <span className="text-white font-bold">{tableNumber}</span></p>
+                    {orderResult && (
+                        <div className="modal-center">
+                            <div className="success-card fade-in">
+                                <div style={{fontSize:'50px', marginBottom:'10px'}}>✅</div>
+                                <h2 style={{margin:'0 0 10px 0'}}>ПРИНЯТО!</h2>
+                                <p style={{color:'#666', fontSize:'14px'}}>{t.pay_info}</p>
+                                <h3 style={{color:'var(--main)', margin:'5px 0 20px 0'}}>{KASPI_NUMBER}</h3>
                                 
-                                <div className="bg-white/5 rounded-2xl p-4 mb-6">
-                                    <div className="text-[10px] text-green-500 font-bold mb-1">{t.order_code}</div>
-                                    <div className="text-3xl font-mono font-black tracking-widest">{currentOrderCode}</div>
+                                <div style={{background:'#000', padding:'15px', borderRadius:'15px', border:'1px dashed #333'}}>
+                                    <div style={{fontSize:'10px', color:'#666'}}>{t.code}</div>
+                                    <div style={{fontSize:'32px', fontWeight:'900', letterSpacing:'5px'}}>{orderResult}</div>
                                 </div>
-
-                                <div className="text-left text-xs space-y-3 mb-8 bg-black p-4 rounded-xl border border-gray-800">
-                                    <p className="flex justify-between"><span>{t.pay_cash}</span></p>
-                                    <p className="flex flex-col gap-1">
-                                        <span>{t.pay_kaspi}</span>
-                                        <span className="text-green-500 font-bold text-lg">{KASPI_NUMBER}</span>
-                                    </p>
-                                    <p className="text-gray-500 italic mt-2">{t.pay_instruction}</p>
-                                </div>
-
-                                <button onClick={() => {setShowSuccess(false); setCart({}); setTableNumber('');}} className="w-full btn-green py-4 rounded-xl">OK</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* MODAL: ADMIN LOGIN */}
-                    {isAdminOpen && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90">
-                            <div className="glass rounded-[32px] p-8 w-full max-w-xs animate__animated animate__fadeIn">
-                                <h2 className="text-center font-black mb-6">{t.admin_title.toUpperCase()}</h2>
-                                <input type="password" placeholder={t.pass} className="input-table w-full mb-4" value={adminPass} onChange={e => setAdminPass(e.target.value)} />
-                                <button onClick={() => adminPass === ADMIN_PASSWORD ? (setView('barista'), setIsAdminOpen(false), setAdminPass('')) : alert('Error')} className="w-full btn-green py-4 rounded-xl mb-3">{t.login}</button>
-                                <button onClick={() => setIsAdminOpen(false)} className="w-full text-gray-600 text-sm">Cancel</button>
+                                <p style={{fontSize:'12px', color:'#555', marginTop:'15px'}}>{t.instr}</p>
+                                <button className="btn-ready" style={{marginTop:'25px'}} onClick={() => {setCart({}); setOrderResult(null); setTable('');}}>OK</button>
                             </div>
                         </div>
                     )}
